@@ -1,27 +1,21 @@
-import express from 'express';
-import { createServer } from 'http';
-import { WebSocketServer } from 'ws';
-import { randomBytes } from 'crypto';
-import path from 'path';
-import { fileURLToPath } from 'url';
+// ... existing imports
 import cors from 'cors';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
 
 const app = express();
 const server = createServer(app);
 const wss = new WebSocketServer({ server });
 
-// Enable CORS for your Vercel frontend URL
+// UPDATE: Allow your Vercel frontend to connect
 app.use(cors({
   origin: process.env.FRONTEND_URL || '*' 
 }));
 
 app.use(express.json());
+// Remove: app.use(express.static(...)); -> Vercel will handle the frontend files
 
-// ... (Keep your existing room and logic code here) ...
+// ... keep existing room logic and wss.on('connection') logic
 
+// UPDATE: Bind to 0.0.0.0 for Render's environment
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, '0.0.0.0', () => {
   console.log(`🔒 Secure Chat Server running on port ${PORT}`);
