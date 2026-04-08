@@ -1,8 +1,8 @@
 //import React, { useState, useEffect, useRef } from 'react';
 //import ReactDOM from 'react-dom/client';
 
-const API_URL = 'http://localhost:3000';
-const WS_URL =  'ws://localhost:3000';
+const API_URL = 'https://chat-vid-voice.onrender.com';
+const WS_URL =  'ws://chat-vid-voice.onrender.com';
 
 export default function ChatApp() {
   const [screen, setScreen] = useState('home'); // home | joining | chatting
