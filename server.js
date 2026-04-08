@@ -13,23 +13,22 @@ const app = express();
 const server = createServer(app);
 const wss = new WebSocketServer({ server });
 
-app.use(cors());
+// MODIFICATION: Enable CORS to allow your frontend to connect to this API
+// You can replace '*' with your specific Vercel URL for better security
+app.use(cors({
+  origin: '*', 
+  methods: ['GET', 'POST']
+}));
+
 app.use(express.json());
-app.use(express.static(path.join(__dirname, 'public')));
 
 // In-memory store for rooms (groups)
 const rooms = new Map();
-const MAX_USERS_PER_ROOM = 5;
+const MAX_USERS_PER_ROOM = 5; //
 
 // Generate secure room ID
 function generateRoomId() {
   return randomBytes(16).toString('hex');
-}
-
-// Validate room exists and has space
-function isRoomValid(roomId) {
-  const room = rooms.get(roomId);
-  return room && room.members.size < MAX_USERS_PER_ROOM;
 }
 
 // Create new room
@@ -80,25 +79,6 @@ app.post('/api/rooms/join', (req, res) => {
   });
 });
 
-// Get room info
-app.get('/api/rooms/:roomId', (req, res) => {
-  const room = rooms.get(req.params.roomId);
-  if (!room) {
-    return res.status(404).json({ error: 'Room not found' });
-  }
-
-  res.json({
-    id: room.id,
-    memberCount: room.members.size,
-    maxMembers: MAX_USERS_PER_ROOM,
-    members: Array.from(room.members.values()).map(m => ({ 
-      id: m.id, 
-      username: m.username,
-      joinedAt: m.joinedAt 
-    }))
-  });
-});
-
 // WebSocket connection handler
 wss.on('connection', (ws) => {
   let roomId = null;
@@ -123,7 +103,6 @@ wss.on('connection', (ws) => {
         roomId = message.roomId;
         username = message.username;
 
-        // Add member to room
         room.members.set(userId, {
           id: userId,
           username,
@@ -131,7 +110,6 @@ wss.on('connection', (ws) => {
           ws
         });
 
-        // Notify others
         broadcastToRoom(roomId, {
           type: 'user_joined',
           username,
@@ -139,13 +117,11 @@ wss.on('connection', (ws) => {
           memberCount: room.members.size
         }, userId);
 
-        // Send recent message history
         ws.send(JSON.stringify({
           type: 'history',
           messages: room.messageHistory.slice(-50)
         }));
 
-        // Send current members
         ws.send(JSON.stringify({
           type: 'members_list',
           members: Array.from(room.members.values()).map(m => ({
@@ -165,18 +141,16 @@ wss.on('connection', (ws) => {
           id: randomBytes(8).toString('hex'),
           userId,
           username,
-          text: message.text.slice(0, 5000), // Limit message length
+          text: message.text.slice(0, 5000), 
           timestamp: Date.now(),
           type: 'text'
         };
 
-        // Store message
         room.messageHistory.push(chatMessage);
         if (room.messageHistory.length > room.maxMessages) {
           room.messageHistory.shift();
         }
 
-        // Broadcast to room
         broadcastToRoom(roomId, {
           type: 'message',
           ...chatMessage
@@ -209,21 +183,8 @@ wss.on('connection', (ws) => {
           userId,
           memberCount: room.members.size
         });
-
-        // Clean up empty rooms after 30 minutes
-        if (room.members.size === 0) {
-          setTimeout(() => {
-            if (rooms.get(roomId)?.members.size === 0) {
-              rooms.delete(roomId);
-            }
-          }, 30 * 60 * 1000);
-        }
       }
     }
-  });
-
-  ws.on('error', (err) => {
-    console.error('WebSocket error:', err);
   });
 });
 
@@ -234,18 +195,14 @@ function broadcastToRoom(roomId, data, excludeUserId = null) {
   const payload = JSON.stringify(data);
   room.members.forEach((member) => {
     if (excludeUserId && member.id === excludeUserId) return;
-    if (member.ws.readyState === 1) { // OPEN state
+    if (member.ws.readyState === 1) { 
       member.ws.send(payload);
     }
   });
 }
 
-// Serve single page app
-app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'index.html'));
-});
-
+// MODIFICATION: Use port from environment variable and bind to 0.0.0.0 for Render
 const PORT = process.env.PORT || 3000;
-server.listen(PORT, () => {
+server.listen(PORT, '0.0.0.0', () => {
   console.log(`🔒 Secure Chat Server running on port ${PORT}`);
 });
