@@ -1,24 +1,56 @@
-import express from 'express';
-import { fileURLToPath } from 'url';
-import path from 'path';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+const express = require('express');
+const http = require('http');
+const WebSocket = require('ws');
 
 const app = express();
+const server = http.createServer(app);
+const wss = new WebSocket.Server({ server });
 
-// Serve static files from the public directory
-app.use(express.static(path.join(__dirname, 'public')));
+// Middleware to serve static files
+app.use(express.static('public'));
 
-// Root GET handler serving index.html
-app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'index.html'));
+// API route for room creation
+app.post('/api/rooms', (req, res) => {
+    // Logic to create a new room
+    // (e.g., store room info in a database)
+    const roomId = createRoom(); // Your implementation here
+    res.status(201).json({ roomId });
 });
 
-// Keep existing WebSocket and API route functionality intact
-// ... your existing WebSocket and API routes here ...
+// API route for joining a room
+app.post('/api/rooms/:id/join', (req, res) => {
+    const roomId = req.params.id;
+    // Logic to join a room
+    // (e.g., validate room exists, add user to room, etc.)
+    joinRoom(roomId); // Your implementation here
+    res.status(200).json({ message: 'Joined room successfully' });
+});
+
+// WebSocket connection handling
+wss.on('connection', (ws) => {
+    console.log('New client connected');
+
+    ws.on('message', (message) => {
+        console.log(`Received message: ${message}`);
+        // Handle messages from clients (broadcast, etc.)
+    });
+
+    ws.on('close', () => {
+        console.log('Client disconnected');
+    });
+});
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-    console.log(`Server is running on port ${PORT}`);
+server.listen(PORT, () => {
+    console.log(`Server is running on http://localhost:${PORT}`);
 });
+
+function createRoom() {
+    // Your logic to create and return a room ID
+    return 'room123'; // Dummy example
+}
+
+function joinRoom(roomId) {
+    // Your logic to join the room
+    console.log(`User joined room: ${roomId}`);
+}
