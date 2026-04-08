@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import ReactDOM from 'react-dom/client';
 
-const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:3000';
-const WS_URL = process.env.REACT_APP_WS_URL || 'ws://localhost:3000';
+const API_URL = 'http://localhost:3000';
+const WS_URL =  'ws://localhost:3000';
 
 export default function ChatApp() {
   const [screen, setScreen] = useState('home'); // home | joining | chatting
